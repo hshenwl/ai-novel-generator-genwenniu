@@ -31,11 +31,11 @@ Planner（规划）→ Writer（写作）→ DeepReader（深度阅读）→ Dee
 
 支持多 Provider 降级链，当主模型不可用时自动切换备选模型：
 
-- **OpenAI 兼容接口** — GPT-4o、GPT-3.5 等
-- **Anthropic Claude** — Claude 3 Opus / Sonnet / Haiku
-- **DeepSeek** — DeepSeek Chat / Coder
-- **Gemini (Google)** — Gemini Pro / Exp
-- **通义千问 / 智谱 GLM / 文心一言** — 国产大模型
+- **OpenAI 兼容接口** — GPT-5、GPT-5.5 等
+- **Anthropic Claude** — Claude Opus4.7 / Sonnet / Haiku
+- **DeepSeek** — DeepSeek V4 / Coder
+- **Gemini (Google)** — Gemini 3.1Pro / Exp
+- **通义千问 / 智谱 GLM5.1 / 文心一言** — 国产大模型
 - **Ollama (本地)** — 零成本离线推理
 
 ### 📋 完整的创作管理
@@ -120,7 +120,7 @@ Planner（规划）→ Writer（写作）→ DeepReader（深度阅读）→ Dee
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/your-username/gengwen-niu.git
+git clone https://github.com/hshenwl/ai-novel-generator-genwenniu.git
 cd gengwen-niu
 
 # 2. 安装 pnpm（如未安装）
