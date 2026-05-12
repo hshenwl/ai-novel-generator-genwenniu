@@ -1,0 +1,723 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// 用户与认证
+// ============================================================
+
+model User {
+  id           String   @id @default(uuid())
+  tenantId     String?  @map("tenant_id")
+  username     String   @unique
+  passwordHash String   @map("password_hash")
+  email        String?  @unique
+  nickname     String?
+  avatar       String?
+  role         String   @default("user")
+  status       String   @default("active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  projects     Project[]
+  paramOverrides ParamOverride[]
+  modelConfigs ModelConfig[]
+
+  @@index([username])
+  @@map("users")
+}
+
+// ============================================================
+// 项目管理
+// ============================================================
+
+model Project {
+  id          String   @id @default(uuid())
+  tenantId    String?  @map("tenant_id")
+  userId      String   @map("user_id")
+  name        String
+  genre       String?
+  perspective String?
+  description String?
+  targetWords Int      @default(500000) @map("target_words")
+  status      String   @default("active")
+  version     Int      @default(1)
+  createdBy   String?  @map("created_by")
+  updatedBy   String?  @map("updated_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  user            User              @relation(fields: [userId], references: [id])
+  worldSetting    WorldSetting?
+  outline         Outline?
+  volumes         Volume[]
+  characters      Character[]
+  organizations   Organization[]
+  foreshadows     Foreshadow[]
+  hooks           Hook[]
+  workflows       WorkflowRun[]
+  auditReports    AuditReport[]
+  revisions       RevisionRecord[]
+  modelConfigs    ModelConfig[]
+  careers         Career[]
+  characterRelationships CharacterRelationship[]
+  promptTemplates PromptTemplate[]
+  writingStyles   WritingStyle[]
+  inspirations    Inspiration[]
+  generationFeedbacks GenerationFeedback[]
+  agentRules      AgentRule[]
+
+  @@index([userId])
+  @@index([userId, deletedAt, status])
+  @@map("projects")
+}
+
+// ============================================================
+// 世界设定
+// ============================================================
+
+model WorldSetting {
+  id            String   @id @default(uuid())
+  projectId     String   @unique @map("project_id")
+  background    String?
+  rules         String?
+  powerSystem   String?  @map("power_system")
+  organizations String?
+  conflict      String?
+  target        String?
+  taboos        String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("world_settings")
+}
+
+// ============================================================
+// 小说总纲
+// ============================================================
+
+model Outline {
+  id           String   @id @default(uuid())
+  projectId    String   @unique @map("project_id")
+  content      String
+  summary      String?
+  mainPlot     String?  @map("main_plot")
+  coreConflict String?  @map("core_conflict")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("outlines")
+}
+
+// ============================================================
+// 卷纲
+// ============================================================
+
+model Volume {
+  id                    String   @id @default(uuid())
+  projectId             String   @map("project_id")
+  orderIndex            Int      @map("order_index")
+  title                 String
+  description           String?
+  outline               String?
+  targetChapterCount    Int      @default(50) @map("target_chapter_count")
+  targetWordsPerChapter Int      @default(2500) @map("target_words_per_chapter")
+  status                String   @default("draft")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  project        Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  chapterOutlines ChapterOutline[]
+  chapters       Chapter[]
+
+  @@index([projectId])
+  @@unique([projectId, orderIndex])
+  @@map("volumes")
+}
+
+// ============================================================
+// 章纲
+// ============================================================
+
+model ChapterOutline {
+  id             String   @id @default(uuid())
+  projectId      String   @map("project_id")
+  volumeId       String   @map("volume_id")
+  chapterNo      Int      @map("chapter_no")
+  title          String?
+  summary        String?
+  conflict       String?
+  openingHook    String?  @map("opening_hook")
+  endingHook     String?  @map("ending_hook")
+  inChapterHook  String?  @map("in_chapter_hook")
+  coolPoints     String?  @map("cool_points")
+  emotionalPoint String?  @map("emotional_point")
+  foreshadows    String?
+  characters     String?
+  scenes         String?
+  auditFocus     String?  @map("audit_focus")
+  knowledgeRef   String?  @map("knowledge_ref")
+  continuity     String?
+  status         String   @default("draft")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  volume  Volume   @relation(fields: [volumeId], references: [id], onDelete: Cascade)
+  chapter Chapter?
+
+  @@index([volumeId])
+  @@unique([volumeId, chapterNo])
+  @@map("chapter_outlines")
+}
+
+// ============================================================
+// 章节正文
+// ============================================================
+
+model Chapter {
+  id               String    @id @default(uuid())
+  projectId        String    @map("project_id")
+  volumeId         String    @map("volume_id")
+  chapterOutlineId String?   @unique @map("chapter_outline_id")
+  chapterNo        Int       @map("chapter_no")
+  title            String?
+  content          String
+  wordCount        Int       @default(0) @map("word_count")
+  version          Int       @default(1)
+  status           String    @default("draft")
+  auditScore       Float?    @map("audit_score")
+  publishedAt      DateTime? @map("published_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  volume         Volume            @relation(fields: [volumeId], references: [id], onDelete: Cascade)
+  chapterOutline ChapterOutline?   @relation(fields: [chapterOutlineId], references: [id])
+  workflows      WorkflowRun[]
+  auditReports   AuditReport[]
+  revisions      RevisionRecord[]
+
+  @@index([volumeId])
+  @@index([projectId])
+  @@unique([volumeId, chapterNo])
+  @@map("chapters")
+}
+
+// ============================================================
+// 角色
+// ============================================================
+
+model Character {
+  id             String   @id @default(uuid())
+  projectId      String   @map("project_id")
+  name           String
+  role           String
+  gender         String?
+  age            String?
+  organization   String?
+  profession     String?
+  appearance     String?
+  personality    String?
+  background     String?
+  goals          String?
+  fears          String?
+  characterVoice String?  @map("character_voice")
+  status         String   @default("active")
+  firstAppear    Int?     @map("first_appear")
+  lastAppear     Int?     @map("last_appear")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("characters")
+}
+
+// ============================================================
+// 组织
+// ============================================================
+
+model Organization {
+  id          String   @id @default(uuid())
+  projectId   String   @map("project_id")
+  name        String
+  type        String?
+  alignment   String?
+  description String?
+  structure   String?
+  goals       String?
+  resources   String?
+  status      String   @default("active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("organizations")
+}
+
+// ============================================================
+// 伏笔
+// ============================================================
+
+model Foreshadow {
+  id                String   @id @default(uuid())
+  projectId         String   @map("project_id")
+  name              String
+  type              String?
+  description       String?
+  plantedChapter    Int?     @map("planted_chapter")
+  expectedChapter   Int?     @map("expected_chapter")
+  resolvedChapter   Int?     @map("resolved_chapter")
+  status            String   @default("planted")
+  importance        String   @default("normal")
+  relatedCharacters String?  @map("related_characters")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([status])
+  @@map("foreshadows")
+}
+
+// ============================================================
+// Hook
+// ============================================================
+
+model Hook {
+  id                String   @id @default(uuid())
+  projectId         String   @map("project_id")
+  chapterId         String?  @map("chapter_id")
+  name              String
+  type              String
+  description       String?
+  strengthScore     Float?   @map("strength_score")
+  status            String   @default("new")
+  expectedResolve   Int?     @map("expected_resolve")
+  actualResolve     Int?     @map("actual_resolve")
+  relatedCharacters String?  @map("related_characters")
+  relatedForeshadow String?  @map("related_foreshadow")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([status])
+  @@map("hooks")
+}
+
+// ============================================================
+// 工作流运行
+// ============================================================
+
+model WorkflowRun {
+  id          String    @id @default(uuid())
+  projectId   String    @map("project_id")
+  chapterId   String?   @map("chapter_id")
+  type        String
+  status      String    @default("pending")
+  currentStep String?   @map("current_step")
+  mode        String    @default("standard")
+  progress    Float     @default(0)
+  error       String?
+  startedAt   DateTime? @map("started_at")
+  completedAt DateTime? @map("completed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  project     Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  chapter     Chapter?            @relation(fields: [chapterId], references: [id])
+  stepOutputs WorkflowStepOutput[]
+  auditReports AuditReport[]
+  revisions   RevisionRecord[]
+
+  @@index([projectId])
+  @@index([status])
+  @@map("workflow_runs")
+}
+
+// ============================================================
+// 工作流步骤输出
+// ============================================================
+
+model WorkflowStepOutput {
+  id             String   @id @default(uuid())
+  workflowId     String   @map("workflow_id")
+  stepName       String   @map("step_name")
+  inputSnapshot  String?  @map("input_snapshot")
+  outputContent  String?  @map("output_content")
+  modelId        String?  @map("model_id")
+  ruleFiles      String?  @map("rule_files")
+  knowledgeFiles String?  @map("knowledge_files")
+  tokenUsage     Int?     @map("token_usage")
+  cost           Float?
+  duration       Int?
+  status         String   @default("pending")
+  error          String?
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  workflow WorkflowRun @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@index([workflowId])
+  @@map("workflow_step_outputs")
+}
+
+// ============================================================
+// 审核报告
+// ============================================================
+
+model AuditReport {
+  id              String   @id @default(uuid())
+  projectId       String   @map("project_id")
+  chapterId       String   @map("chapter_id")
+  workflowId      String?  @map("workflow_id")
+  totalScore      Float    @map("total_score")
+  dimensionScores String   @map("dimension_scores")
+  issues          String
+  suggestions     String
+  passStatus      String   @map("pass_status")
+  auditorModel    String?  @map("auditor_model")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  project  Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  chapter  Chapter      @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  workflow WorkflowRun? @relation(fields: [workflowId], references: [id])
+
+  @@index([chapterId])
+  @@index([projectId])
+  @@map("audit_reports")
+}
+
+// ============================================================
+// 修订记录
+// ============================================================
+
+model RevisionRecord {
+  id              String   @id @default(uuid())
+  projectId       String   @map("project_id")
+  chapterId       String   @map("chapter_id")
+  workflowId      String?  @map("workflow_id")
+  originalContent String   @map("original_content")
+  revisedContent  String   @map("revised_content")
+  aiDeFlavorModes String   @map("ai_de_flavor_modes")
+  revisionSummary String?  @map("revision_summary")
+  beforeScore     Float?   @map("before_score")
+  afterScore      Float?   @map("after_score")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  project  Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  chapter  Chapter      @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  workflow WorkflowRun? @relation(fields: [workflowId], references: [id])
+
+  @@index([chapterId])
+  @@index([projectId])
+  @@map("revision_records")
+}
+
+// ============================================================
+// 模型配置
+// ============================================================
+
+model ModelConfig {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  projectId   String?  @map("project_id")
+  name        String
+  provider    String
+  modelId     String   @map("model_id")
+  apiKey      String?  @map("api_key")
+  baseUrl     String?  @map("base_url")
+  maxTokens   Int?     @map("max_tokens")
+  temperature Float?
+  isDefault   Boolean  @default(false) @map("is_default")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user    User     @relation(fields: [userId], references: [id])
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("model_configs")
+}
+
+// ============================================================
+// 任务队列
+// ============================================================
+
+model Task {
+  id           String    @id @default(uuid())
+  type         String
+  status       String    @default("pending")
+  priority     String    @default("normal")
+  payload      String
+  result       String?
+  error        String?
+  retryCount   Int       @default(0) @map("retry_count")
+  maxRetry     Int       @default(3) @map("max_retry")
+  userId       String?   @map("user_id")
+  startedAt    DateTime? @map("started_at")
+  completedAt  DateTime? @map("completed_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([userId])
+  @@map("tasks")
+}
+
+// ============================================================
+// 知识库索引
+// ============================================================
+
+model KnowledgeFile {
+  id        String   @id @default(uuid())
+  path      String   @unique
+  filename  String
+  category  String
+  content   String
+  wordCount Int      @map("word_count")
+  indexed   Boolean  @default(false)
+  embedding String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([category])
+  @@map("knowledge_files")
+}
+
+// ============================================================
+// 系统设置
+// ============================================================
+
+model SystemSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}
+
+// ============================================================
+// 提示词模板（提示词工坊）
+// ============================================================
+
+model PromptTemplate {
+  id          String   @id @default(uuid())
+  projectId   String?  @map("project_id")
+  name        String
+  category    String
+  content     String
+  description String?
+  variables   String?
+  tags        String?
+  isBuiltin   Boolean  @default(false) @map("is_builtin")
+  score       Float?
+  usageCount  Int      @default(0) @map("usage_count")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([category])
+  @@map("prompt_templates")
+}
+
+// ============================================================
+// 写作风格
+// ============================================================
+
+model WritingStyle {
+  id                    String   @id @default(uuid())
+  projectId             String?  @map("project_id")
+  name                  String
+  genre                 String?
+  perspective           String?
+  languageStyle         String?  @map("language_style")
+  paceStyle             String?  @map("pace_style")
+  hookStyle             String?  @map("hook_style")
+  forbiddenExpr         String?  @map("forbidden_expr")
+  sampleText            String?  @map("sample_text")
+  promptTemplate        String?  @map("prompt_template")
+  rules                 String?
+  deAIFlavorIntensity   String?  @map("deai_flavor_intensity")
+  deAIFlavorCategories  String?  @map("deai_flavor_categories")
+  isBuiltin             Boolean  @default(false) @map("is_builtin")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("writing_styles")
+}
+
+// ============================================================
+// 职业体系
+// ============================================================
+
+model Career {
+  id          String   @id @default(uuid())
+  projectId   String   @map("project_id")
+  name        String
+  type        String?
+  description String?
+  levels      String?
+  promotion   String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("careers")
+}
+
+// ============================================================
+// 角色关系图谱
+// ============================================================
+
+model CharacterRelationship {
+  id              String   @id @default(uuid())
+  projectId       String   @map("project_id")
+  sourceId        String   @map("source_id")
+  targetId        String   @map("target_id")
+  relationType    String   @map("relation_type")
+  description     String?
+  isHidden        Boolean  @default(false) @map("is_hidden")
+  status          String   @default("active")
+  firstChapter    Int?     @map("first_chapter")
+  lastChapter     Int?     @map("last_chapter")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([sourceId])
+  @@index([targetId])
+  @@map("character_relationships")
+}
+
+// ============================================================
+// 灵感记录
+// ============================================================
+
+model Inspiration {
+  id          String   @id @default(uuid())
+  projectId   String?  @map("project_id")
+  type        String
+  title       String
+  content     String
+  tags        String?
+  source      String?
+  usedIn      String?  @map("used_in")
+  status      String   @default("draft")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([type])
+  @@map("inspirations")
+}
+
+// ============================================================
+// 生成反馈 — 自动调参数据源
+// ============================================================
+
+model GenerationFeedback {
+  id               String   @id @default(uuid())
+  projectId        String   @map("project_id")
+  workflowId       String?  @map("workflow_id")
+  taskType         String   @map("task_type")          // world_setting/outline/volume/chapter/...
+  genre            String?                              // 玄幻/都市/...
+  modelName        String?  @map("model_name")
+  temperature      Float?
+  maxTokens        Int?     @map("max_tokens")
+  workflowMode     String?  @map("workflow_mode")      // quick/standard/strict
+  totalScore       Float?   @map("total_score")
+  dimensionScores  String?  @map("dimension_scores")   // JSON: {"代入感":8,"爽点":7,...}
+  passStatus       String?  @map("pass_status")        // pass/minor_revise/major_revise/rewrite/blocked
+  revisionRounds   Int      @default(0) @map("revision_rounds")
+  stepDurations    String?  @map("step_durations")     // JSON: {"planning":1200,"writing":5000,...}
+  tokenUsage       Int?     @map("token_usage")
+  cost             Float?   @default(0)
+  promptTemplateId String?  @map("prompt_template_id")
+  knowledgeRefs    String?  @map("knowledge_refs")     // JSON: ["技巧/xxx.md",...]
+  bottleneckDims   String?  @map("bottleneck_dims")    // JSON: ["代入感","节奏"]
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([taskType])
+  @@index([modelName])
+  @@index([createdAt])
+  @@map("generation_feedback")
+}
+
+// ============================================================
+// 参数覆盖 — 用户手动锁定的参数
+// ============================================================
+
+model ParamOverride {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  taskType    String   @map("task_type")
+  genre       String?                              // null = 全局
+  paramName   String   @map("param_name")          // temperature/maxTokens/workflowMode/...
+  paramValue  String   @map("param_value")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("param_overrides")
+}
+
+// ============================================================
+// Agent规则
+// ============================================================
+
+model AgentRule {
+  id          String   @id @default(uuid())
+  projectId   String?  @map("project_id")
+  userId      String?  @map("user_id")
+  agentName   String   @map("agent_name")
+  title       String
+  content     String
+  scope       String?
+  tags        String?
+  isBuiltin   Boolean  @default(false) @map("is_builtin")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([agentName])
+  @@index([projectId])
+  @@map("agent_rules")
+}

@@ -1,0 +1,44 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "allowSyntheticDefaultImports": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "baseUrl": ".",
+    "paths": {
+      "@ai-novel/shared": ["packages/shared/src"],
+      "@ai-novel/database": ["packages/database/src"],
+      "@ai-novel/ai-gateway": ["packages/ai-gateway/src"],
+      "@ai-novel/workflow-engine": ["packages/workflow-engine/src"],
+      "@ai-novel/seven-step-engine": ["packages/seven-step-engine/src"],
+      "@ai-novel/knowledge-base": ["packages/knowledge-base/src"],
+      "@ai-novel/exporter": ["packages/exporter/src"],
+      "@ai-novel/storage": ["packages/storage/src"]
+    }
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    ".next",
+    ".nuxt",
+    "coverage"
+  ]
+}

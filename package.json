@@ -1,0 +1,45 @@
+{
+  "name": "gengwen-niu",
+  "version": "0.1.0",
+  "private": true,
+  "description": "耕文牛 - AI小说生成软件 | 本地优先、云端兼容",
+  "scripts": {
+    "dev": "pnpm run --parallel dev",
+    "dev:web": "pnpm --filter @ai-novel/web dev",
+    "dev:server": "pnpm --filter @ai-novel/server dev",
+    "build": "pnpm run --parallel build",
+    "build:web": "pnpm --filter @ai-novel/web build",
+    "build:server": "pnpm --filter @ai-novel/server build",
+    "build:launcher": "pnpm --filter @ai-novel/launcher build",
+    "start": "pnpm --filter @ai-novel/server start",
+    "start:prod": "pnpm --filter @ai-novel/server start:prod",
+    "launcher:start": "pnpm --filter @ai-novel/launcher start",
+    "setup": "pnpm install && pnpm db:generate && pnpm db:push",
+    "lint": "pnpm run --parallel lint",
+    "clean": "pnpm run --parallel clean",
+    "db:generate": "pnpm --filter @ai-novel/server db:generate",
+    "db:push": "pnpm --filter @ai-novel/server db:push",
+    "db:migrate": "pnpm --filter @ai-novel/server db:migrate",
+    "db:studio": "pnpm --filter @ai-novel/server db:studio"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0",
+  "keywords": [
+    "ai",
+    "novel",
+    "writing",
+    "creative-writing",
+    "llm",
+    "openai",
+    "claude",
+    "ollama"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^3.0.3"
+  }
+}

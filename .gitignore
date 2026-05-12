@@ -1,0 +1,54 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+.nuxt/
+.cache/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Database
+*.db
+*.db-journal
+data/
+
+# Uploads
+uploads/
+
+# Coverage
+coverage/
+
+# Temp
+tmp/
+temp/
+
+# Deploy build artifacts
+deploy/nsis/FILES/
+
+# TypeScript build info
+*.tsbuildinfo
